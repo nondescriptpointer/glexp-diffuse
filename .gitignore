@@ -1,0 +1,11 @@
+berkelium
+chrome.pak
+build/
+installed-chromium
+locales
+resources
+resources.pak
+diffuse
+*.tga
+*.swp
+*.swo
