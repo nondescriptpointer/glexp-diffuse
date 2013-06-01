@@ -5,6 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <GL/glew.h>
 #include <GL/glfw.h>
+#include <map>
 
 #include "ShaderManager.h"
 #include "TriangleBatch.h"
@@ -15,6 +16,7 @@
 #include "TransformPipeline.h"
 #include "Math3D.h"
 #include "Framecounter.h"
+#include "UniformManager.h"
 
 // TODO: better management of uniform locations
 // TODO: specularity
@@ -41,12 +43,7 @@ GLuint tex;
 // frame counter
 Framecounter framecounter;
 // uniform locations
-GLuint locMVP;
-GLuint locNormalMatrix;
-GLuint locLightPosition;
-GLuint locAmbientColor;
-GLuint locDiffuseColor;
-GLuint locTextureUnit;
+UniformManager* uniformManager;
 
 void setupContext(void){
     // general state
@@ -73,13 +70,8 @@ void setupContext(void){
     shaderManager = new ShaderManager(searchPath);
     ShaderAttribute attrs[] = {{0,"vVertex"},{2,"vNormal"},{3,"vTexCoord"}};
     diffuseShader = shaderManager->buildShaderPair("diffuse.vp","diffuse.fp",sizeof(attrs)/sizeof(ShaderAttribute),attrs);
-
-    locMVP = glGetUniformLocation(diffuseShader,"mvpMatrix");
-    locNormalMatrix = glGetUniformLocation(diffuseShader,"normalMatrix");
-    locLightPosition = glGetUniformLocation(diffuseShader,"lightPosition");
-    locAmbientColor = glGetUniformLocation(diffuseShader,"ambientColor");
-    locDiffuseColor = glGetUniformLocation(diffuseShader,"diffuseColor");
-    locTextureUnit = glGetUniformLocation(diffuseShader,"textureUnit");
+    const char* uniforms[] = {"mvpMatrix","normalMatrix","lightPosition","ambientColor","diffuseColor","textureUnit"};
+    uniformManager = new UniformManager(diffuseShader,sizeof(uniforms)/sizeof(char*),uniforms); 
 
     // setup geometry
     TriangleBatch& sphereBatch = GeometryFactory::sphere(0.4f, 40, 40);
@@ -128,15 +120,15 @@ void render(void){
     // model
     glUseProgram(diffuseShader);
     glBindTexture(GL_TEXTURE_2D, tex);
-    glUniformMatrix4fv(locMVP,1,GL_FALSE,transformPipeline.getModelViewProjectionMatrix());
-    glUniformMatrix3fv(locNormalMatrix,1,GL_FALSE,transformPipeline.getNormalMatrix());
+    glUniformMatrix4fv(uniformManager->get("mvpMatrix"),1,GL_FALSE,transformPipeline.getModelViewProjectionMatrix());
+    glUniformMatrix3fv(uniformManager->get("normalMatrix"),1,GL_FALSE,transformPipeline.getNormalMatrix());
     GLfloat lightPosition[] = {2.0f, 2.0f, 2.0f};
-    glUniform3fv(locLightPosition,1,lightPosition);
+    glUniform3fv(uniformManager->get("lightPosition"),1,lightPosition);
     GLfloat ambientColor[] = {0.1f, 0.1f, 0.1f, 1.0f};
-    glUniform4fv(locAmbientColor,1,ambientColor);
+    glUniform4fv(uniformManager->get("ambientColor"),1,ambientColor);
     GLfloat diffuseColor[] = {0.8f, 0.8f, 0.8f, 1.0f};
-    glUniform4fv(locDiffuseColor,1,diffuseColor);
-    glUniform1i(locTextureUnit,0);
+    glUniform4fv(uniformManager->get("diffuseColor"),1,diffuseColor);
+    glUniform1i(uniformManager->get("textureUnit"),0);
     obj->draw();
 
     modelViewMatrix.popMatrix();
