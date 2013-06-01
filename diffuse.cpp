@@ -14,8 +14,8 @@
 #include "Frustum.h"
 #include "TransformPipeline.h"
 #include "Math3D.h"
+#include "Framecounter.h"
 
-// TODO: framerate tool
 // TODO: better management of uniform locations
 // TODO: specularity
 // TODO: better texture loading
@@ -38,6 +38,8 @@ MatrixStack projectionMatrix;
 Geometry* obj;
 // texture
 GLuint tex;
+// frame counter
+Framecounter framecounter;
 // uniform locations
 GLuint locMVP;
 GLuint locNormalMatrix;
@@ -98,13 +100,8 @@ void setupContext(void){
 
 void render(void){
     // framerate
-    static int frame = 0;
-    static long second = 0;
-    frame++;
-    if((int)glfwGetTime() > second){
-        std::cout << "FPS: " << frame << std::endl;
-        frame = 0;
-        second = (int)glfwGetTime();
+    if(framecounter.tick()){
+        std::cout << "FPS: " << framecounter.getFramerate() << std::endl;
     }
 
     // drawing
