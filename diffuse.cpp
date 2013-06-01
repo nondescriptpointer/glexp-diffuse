@@ -18,7 +18,6 @@
 #include "Framecounter.h"
 #include "UniformManager.h"
 
-// TODO: better management of uniform locations
 // TODO: specularity
 // TODO: better texture loading
 // TODO: model loading
@@ -69,8 +68,8 @@ void setupContext(void){
     searchPath->push_back("/home/ego/projects/personal/gliby/shaders/");
     shaderManager = new ShaderManager(searchPath);
     ShaderAttribute attrs[] = {{0,"vVertex"},{2,"vNormal"},{3,"vTexCoord"}};
-    diffuseShader = shaderManager->buildShaderPair("diffuse.vp","diffuse.fp",sizeof(attrs)/sizeof(ShaderAttribute),attrs);
-    const char* uniforms[] = {"mvpMatrix","normalMatrix","lightPosition","ambientColor","diffuseColor","textureUnit"};
+    diffuseShader = shaderManager->buildShaderPair("diffuse_specular.vp","diffuse_specular.fp",sizeof(attrs)/sizeof(ShaderAttribute),attrs);
+    const char* uniforms[] = {"mvpMatrix","normalMatrix","lightPosition","ambientColor","diffuseColor","textureUnit","specularColor","shinyness"};
     uniformManager = new UniformManager(diffuseShader,sizeof(uniforms)/sizeof(char*),uniforms); 
 
     // setup geometry
@@ -126,8 +125,11 @@ void render(void){
     glUniform3fv(uniformManager->get("lightPosition"),1,lightPosition);
     GLfloat ambientColor[] = {0.1f, 0.1f, 0.1f, 1.0f};
     glUniform4fv(uniformManager->get("ambientColor"),1,ambientColor);
-    GLfloat diffuseColor[] = {0.8f, 0.8f, 0.8f, 1.0f};
+    GLfloat diffuseColor[] = {0.5f, 0.5f, 0.5f, 1.0f};
     glUniform4fv(uniformManager->get("diffuseColor"),1,diffuseColor);
+    GLfloat specularColor[] = {0.8f, 0.8f, 0.8f, 1.0f};
+    glUniform4fv(uniformManager->get("specularColor"),1,specularColor);
+    glUniform1f(uniformManager->get("shinyness"),10.0f);
     glUniform1i(uniformManager->get("textureUnit"),0);
     obj->draw();
 
