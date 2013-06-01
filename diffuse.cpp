@@ -15,6 +15,12 @@
 #include "TransformPipeline.h"
 #include "Math3D.h"
 
+// TODO: framerate tool
+// TODO: better management of uniform locations
+// TODO: specularity
+// TODO: better texture loading
+// TODO: model loading
+
 using namespace gliby;
 using namespace Math3D;
 
@@ -32,6 +38,13 @@ MatrixStack projectionMatrix;
 Geometry* obj;
 // texture
 GLuint tex;
+// uniform locations
+GLuint locMVP;
+GLuint locNormalMatrix;
+GLuint locLightPosition;
+GLuint locAmbientColor;
+GLuint locDiffuseColor;
+GLuint locTextureUnit;
 
 void setupContext(void){
     // general state
@@ -56,8 +69,15 @@ void setupContext(void){
     searchPath->push_back("./shaders/");
     searchPath->push_back("/home/ego/projects/personal/gliby/shaders/");
     shaderManager = new ShaderManager(searchPath);
-    ShaderAttribute attrs[] = {{0,"vVertex"},{3,"vTexCoord"}};
+    ShaderAttribute attrs[] = {{0,"vVertex"},{2,"vNormal"},{3,"vTexCoord"}};
     diffuseShader = shaderManager->buildShaderPair("diffuse.vp","diffuse.fp",sizeof(attrs)/sizeof(ShaderAttribute),attrs);
+
+    locMVP = glGetUniformLocation(diffuseShader,"mvpMatrix");
+    locNormalMatrix = glGetUniformLocation(diffuseShader,"normalMatrix");
+    locLightPosition = glGetUniformLocation(diffuseShader,"lightPosition");
+    locAmbientColor = glGetUniformLocation(diffuseShader,"ambientColor");
+    locDiffuseColor = glGetUniformLocation(diffuseShader,"diffuseColor");
+    locTextureUnit = glGetUniformLocation(diffuseShader,"textureUnit");
 
     // setup geometry
     TriangleBatch& sphereBatch = GeometryFactory::sphere(0.4f, 40, 40);
@@ -74,20 +94,28 @@ void setupContext(void){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glGenerateMipmap(GL_TEXTURE_2D);
-
 }
 
 void render(void){
+    // framerate
+    static int frame = 0;
+    static long second = 0;
+    frame++;
+    if((int)glfwGetTime() > second){
+        std::cout << "FPS: " << frame << std::endl;
+        frame = 0;
+        second = (int)glfwGetTime();
+    }
+
     // drawing
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     // setup camera
-    float rotation_x = 0.0f;
-    float rotation_y = 0.0f;
-    float camera_distance = 3.0f;
+    double time = glfwGetTime() / 5;
+    double rotation_x = time;
+    double camera_distance = 3.0f;
     Vector3f origin = {0.0f};
     origin[0] = cos(rotation_x*2*PI);
-    origin[1] = cos(rotation_y*2*PI);
     origin[2] = sin(rotation_x*2*PI);
     normalizeVector(origin);
     scaleVector3(origin,camera_distance);
@@ -103,9 +131,17 @@ void render(void){
     // model
     glUseProgram(diffuseShader);
     glBindTexture(GL_TEXTURE_2D, tex);
-    glUniformMatrix4fv(glGetUniformLocation(diffuseShader,"mvpMatrix"),1,GL_FALSE,transformPipeline.getModelViewProjectionMatrix());
-    glUniform1i(glGetUniformLocation(diffuseShader,"textureUnit"),0);
+    glUniformMatrix4fv(locMVP,1,GL_FALSE,transformPipeline.getModelViewProjectionMatrix());
+    glUniformMatrix3fv(locNormalMatrix,1,GL_FALSE,transformPipeline.getNormalMatrix());
+    GLfloat lightPosition[] = {2.0f, 2.0f, 2.0f};
+    glUniform3fv(locLightPosition,1,lightPosition);
+    GLfloat ambientColor[] = {0.1f, 0.1f, 0.1f, 1.0f};
+    glUniform4fv(locAmbientColor,1,ambientColor);
+    GLfloat diffuseColor[] = {0.8f, 0.8f, 0.8f, 1.0f};
+    glUniform4fv(locDiffuseColor,1,diffuseColor);
+    glUniform1i(locTextureUnit,0);
     obj->draw();
+
     modelViewMatrix.popMatrix();
 }
 
@@ -118,6 +154,7 @@ void keyCallback(int id, int state){
 void resizeCallback(int width, int height){
     window_w = width;
     window_h = height;
+    glViewport(0,0,window_w,window_h);
     // update projection matrix
     viewFrustum.setPerspective(35.0f, float(window_w)/float(window_h),1.0f,500.0f);
     projectionMatrix.loadMatrix(viewFrustum.getProjectionMatrix());
