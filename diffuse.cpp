@@ -17,8 +17,8 @@
 #include "Math3D.h"
 #include "Framecounter.h"
 #include "UniformManager.h"
+#include "TextureManager.h"
 
-// TODO: specularity
 // TODO: better texture loading
 // TODO: model loading
 
@@ -43,6 +43,7 @@ GLuint tex;
 Framecounter framecounter;
 // uniform locations
 UniformManager* uniformManager;
+TextureManager textureManager;
 
 void setupContext(void){
     // general state
@@ -77,16 +78,8 @@ void setupContext(void){
     obj = &sphereBatch;
 
     // setup object texture
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glfwLoadTexture2D("icemoon.tga",0);
-    GLfloat largest_anisotropy;
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_anisotropy);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, largest_anisotropy);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    const char* textures[] = {"icemoon.tga"};
+    textureManager.loadTextures(sizeof(textures)/sizeof(char*),textures,GL_TEXTURE_2D,GL_TEXTURE0);
 }
 
 void render(void){
@@ -118,7 +111,7 @@ void render(void){
 
     // model
     glUseProgram(diffuseShader);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    glBindTexture(GL_TEXTURE_2D, textureManager.get("icemoon.tga"));
     glUniformMatrix4fv(uniformManager->get("mvpMatrix"),1,GL_FALSE,transformPipeline.getModelViewProjectionMatrix());
     glUniformMatrix3fv(uniformManager->get("normalMatrix"),1,GL_FALSE,transformPipeline.getNormalMatrix());
     GLfloat lightPosition[] = {2.0f, 2.0f, 2.0f};
