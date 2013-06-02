@@ -18,9 +18,12 @@
 #include "Framecounter.h"
 #include "UniformManager.h"
 #include "TextureManager.h"
+#include "ModelLoader.h"
 
-// TODO: better texture loading
-// TODO: model loading
+// TODO: Vertex/index count seems unreasonably high (especially when adding in texture coordinates)
+// TODO: Normals seem completely off, shouldn't behave the way they do
+// TODO: texture coordinates & texture
+// TODO: rotation is still jittery
 
 using namespace gliby;
 using namespace Math3D;
@@ -37,6 +40,7 @@ MatrixStack modelViewMatrix;
 MatrixStack projectionMatrix;
 // objects
 Geometry* obj;
+Geometry* monkey;
 // texture
 GLuint tex;
 // frame counter
@@ -48,7 +52,7 @@ TextureManager textureManager;
 void setupContext(void){
     // general state
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_CULL_FACE);
     //glCullFace(GL_BACK);
@@ -77,6 +81,10 @@ void setupContext(void){
     TriangleBatch& sphereBatch = GeometryFactory::sphere(0.4f, 40, 40);
     obj = &sphereBatch;
 
+    // load model
+    ModelLoader modelLoader;
+    monkey = modelLoader.load("models/monkey.dae");
+
     // setup object texture
     const char* textures[] = {"icemoon.tga"};
     textureManager.loadTextures(sizeof(textures)/sizeof(char*),textures,GL_TEXTURE_2D,GL_TEXTURE0);
@@ -84,20 +92,22 @@ void setupContext(void){
 
 void render(void){
     // framerate
-    if(framecounter.tick()){
+    /*if(framecounter.tick()){
         std::cout << "FPS: " << framecounter.getFramerate() << std::endl;
-    }
-
+    }*/
+    /*static double buffer = 0;
+    std::cout << glfwGetTime() - buffer << std::endl;
+    buffer = glfwGetTime();*/
     // drawing
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     // setup camera
-    double time = glfwGetTime() / 5;
-    double rotation_x = time;
-    double camera_distance = 3.0f;
+    float time = glfwGetTime() / 5;
+    float rotation_x = time;
+    float camera_distance = 5.0f;
     Vector3f origin = {0.0f};
-    origin[0] = cos(rotation_x*2*PI);
-    origin[2] = sin(rotation_x*2*PI);
+    origin[0] = cos(rotation_x*2.0*PI);
+    origin[2] = sin(rotation_x*2.0*PI);
     normalizeVector(origin);
     scaleVector3(origin,camera_distance);
 
@@ -122,9 +132,10 @@ void render(void){
     glUniform4fv(uniformManager->get("diffuseColor"),1,diffuseColor);
     GLfloat specularColor[] = {0.8f, 0.8f, 0.8f, 1.0f};
     glUniform4fv(uniformManager->get("specularColor"),1,specularColor);
-    glUniform1f(uniformManager->get("shinyness"),10.0f);
+    glUniform1f(uniformManager->get("shinyness"),128.0f);
     glUniform1i(uniformManager->get("textureUnit"),0);
-    obj->draw();
+    //obj->draw();
+    monkey->draw();
 
     modelViewMatrix.popMatrix();
 }
