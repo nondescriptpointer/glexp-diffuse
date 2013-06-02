@@ -20,10 +20,7 @@
 #include "TextureManager.h"
 #include "ModelLoader.h"
 
-// TODO: Vertex/index count seems unreasonably high (especially when adding in texture coordinates)
-// TODO: Normals seem completely off, shouldn't behave the way they do
 // TODO: texture coordinates & texture
-// TODO: rotation is still jittery
 
 using namespace gliby;
 using namespace Math3D;
@@ -74,7 +71,7 @@ void setupContext(void){
     shaderManager = new ShaderManager(searchPath);
     ShaderAttribute attrs[] = {{0,"vVertex"},{2,"vNormal"},{3,"vTexCoord"}};
     diffuseShader = shaderManager->buildShaderPair("diffuse_specular.vp","diffuse_specular.fp",sizeof(attrs)/sizeof(ShaderAttribute),attrs);
-    const char* uniforms[] = {"mvpMatrix","normalMatrix","lightPosition","ambientColor","diffuseColor","textureUnit","specularColor","shinyness"};
+    const char* uniforms[] = {"mvpMatrix","mvMatrix","normalMatrix","lightPosition","ambientColor","diffuseColor","textureUnit","specularColor","shinyness"};
     uniformManager = new UniformManager(diffuseShader,sizeof(uniforms)/sizeof(char*),uniforms); 
 
     // setup geometry
@@ -123,6 +120,7 @@ void render(void){
     glUseProgram(diffuseShader);
     glBindTexture(GL_TEXTURE_2D, textureManager.get("icemoon.tga"));
     glUniformMatrix4fv(uniformManager->get("mvpMatrix"),1,GL_FALSE,transformPipeline.getModelViewProjectionMatrix());
+    glUniformMatrix4fv(uniformManager->get("mvMatrix"),1,GL_FALSE,transformPipeline.getModelViewMatrix());
     glUniformMatrix3fv(uniformManager->get("normalMatrix"),1,GL_FALSE,transformPipeline.getNormalMatrix());
     GLfloat lightPosition[] = {2.0f, 2.0f, 2.0f};
     glUniform3fv(uniformManager->get("lightPosition"),1,lightPosition);
