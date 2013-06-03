@@ -20,9 +20,7 @@
 #include "TextureManager.h"
 #include "ModelLoader.h"
 
-// TODO: texture coordinates & texture
-
-using namespace gliby;
+:x
 using namespace Math3D;
 
 int window_w, window_h;
