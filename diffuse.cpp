@@ -20,7 +20,6 @@
 #include "TextureManager.h"
 #include "ModelLoader.h"
 
-:x
 using namespace Math3D;
 
 int window_w, window_h;
